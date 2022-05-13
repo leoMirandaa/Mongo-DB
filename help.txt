@@ -9,6 +9,8 @@ python3 -m venv venv
 win:
     venv\Scripts\activate
 
+vsCode: py -m venv evn
+
 mac:
     source venv/bin/activate
 
@@ -18,3 +20,6 @@ python3 -m pip install <name>
 
 #execute script
 py server.py
+
+#instalations
+python3 -m pip install pymongo flask-pymongo "pymongo[srv]"

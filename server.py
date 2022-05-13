@@ -3,8 +3,10 @@ import json
 from mock_data import mock_catalog
 from config import db
 from bson import ObjectId
+from flask_cors import CORS
 #server. its the name
 app = Flask('server')
+CORS(app) #disable CORS policy (any one can connect to my server)
 
 @app.route("/home") #decorator
 def home():
@@ -39,16 +41,16 @@ def about():
 #we can't turn the cursos as a JSON, we should create a list
 @app.route("/api/catalog")
 def get_catalog():
-  cursor = db.products.find({})#get all
+  cursor = db.products.find({})#retrieve all, cursor its obj for read, we can interate, we cant parse it
   all_products = []
 
   #read every single obj from the cursor,
   # & put it inside the list,then we can parse the list into Json
   for prod in cursor:
-    prod["_id"] = str(prod["_id"])#fix the id
+    prod["_id"] = str(prod["_id"])#_id its an obj of the id, its not a json valid, we fix it
     all_products.append(prod)
 
-  return json.dumps(all_products)
+  return json.dumps(all_products)#return the list as an json object
 
 
 @app.route("/api/catalog", methods=["post"])
@@ -56,11 +58,31 @@ def save_product():
   product = request.get_json()
   db.products.insert_one(product)
 
-  print("Product Saved!!")
-  print(product)
+  # db.products.delete_many({"price": 1})
+
+  #should have a title > 5
+  if not "title" in product or len(product["title"]) < 6:
+    return abort(400, "Title must exist and should be longer than 5 characters")
+
+  #price should be number > 0
+  if not "price" in product :
+    return abort(400, "Price is required")
+
+  # if type(product["price"]) not in [float, int]:
+  if type(product["price"]) != int and type(product["price"]) != float:
+    return abort(400, "Price must be a valid number")
+
+  if product["price"] <=0:
+    return abort(400, "Price must be greather than zero")
+
+  #there is image
+  if not "image" in product or len(product["image"]) < 1:
+    return abort(404, "Image is required")
+
+  if not "category" in product or len(product["category"]) < 1:
+    return abort(400, "category is required")
 
   #fix the _id issue, if the object has a _id that only will be create on the database
-  #
   product["_id"] = str(product["_id"])
 
   return json.dumps(product)
@@ -70,8 +92,7 @@ def save_product():
 @app.route("/api/catalog/cheapest")
 def get_cheapest():
 
-  #get the data from db
-  cursor = db.products.find({})#get all
+  cursor = db.products.find({})#
 
   cheapest = cursor[0]
 
@@ -81,8 +102,6 @@ def get_cheapest():
 
   cheapest["_id"] = str(cheapest["_id"])
   return json.dumps(cheapest)
-  # return(f"The cheapest product is: {cheapest['title']} - Price: ${cheapest['price']}")
-
 # --------------------------------
 
 @app.route("/api/catalog/total")
@@ -98,29 +117,19 @@ def get_total():
   # total["_id"] = str(cheapest["_id"])
   return json.dumps(total)
 
-
 # --------------------------------
 @app.route("/api/product/<id>")
 def find_product(id):
 
+  if not ObjectId.is_valid(id):
+    abort(400, "Id must be a valid ObjectId value")
+
+  # validate that id is a valid ObjectId value
   prod = db.products.find_one({"_id": ObjectId(id)})
   prod["_id"] = str(prod["_id"])
 
   return json.dumps(prod)
 
-# --------------------------------
-# @app.route("/api/product/<id>")
-# def find_product(id):
-
-#   for product in mock_catalog:
-#     print('product..',product["_id"])
-#     if(id == product['_id']):
-#       return json.dumps(product)
-
-
-# get the list of categories from the catalog
-# /api/products/categories
-# expected: a list of strings containing the prods categories
 @app.route("/api/products/categories")
 def find_categories():
   list_of_categories = []
@@ -134,7 +143,6 @@ def find_categories():
   return json.dumps(list_of_categories)
 
 # get all the products that belong to an specified category
-# /api/products/category/Coffee
 @app.route("/api/products/category/<cat_name>")#REVIEW
 def get_by_category(cat_name):
 
@@ -149,9 +157,6 @@ def get_by_category(cat_name):
 
   return json.dumps(list_of_products)
 
-# search by text INSIDE the title
-# receive a text
-# return all product whose title contains the text
 @app.route("/api/products/search/<text>")
 def search_by_text(text):
 
@@ -161,6 +166,7 @@ def search_by_text(text):
   for product in mock_catalog:
     prod = product["title"]
 
+    # return all product whose title contains the text
     if( text in prod.lower()):
       list_of_products.append(product)
 
@@ -171,24 +177,21 @@ def search_by_text(text):
 ##########   Coupon Codes   ###############
 ## _id, code, discount
 ###########################################
-# validate that code exist and contains at least 5 chars
-#validate that discount is not over 31
-# 401 - bad request
 
-
-#1 - POST /api/couponCodes
 # @app.route("/api/couponCodes", methods=["post"])
 @app.post("/api/couponCodes")
 def save_coupons():
-  discount = 31
   coupon = request.get_json()
 
 # validate that code sxist and contains at least 5 chars
   if not "code" in coupon or len(coupon["code"]) < 5:
     return abort(400, "Code is required and should contains at least 5 characters")
 
+  if not "discount" in coupon:
+    return abort(400, "Discount is required")
+
 # validate that discount is not over 31%
-  if not "discount" in coupon or type(coupon["discount"]) != type(int) or type(coupon["discount"]) != type(float):
+  if type(coupon["discount"]) != type(int) or type(coupon["discount"]) != type(float):
     return abort(401, "Discount is required and should be a valid number")
 
   if coupon["discount"] < 0 or coupon["discount"] > 31:
@@ -223,8 +226,3 @@ def get_codes(code):
 
 #start the server
 app.run(debug=True)
-
-
-# validate that code exist and contains at least 5 chars
-#validate that discount is not over 31
-# 401 - bad request
