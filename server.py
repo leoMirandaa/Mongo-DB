@@ -16,10 +16,6 @@ def home():
 def root():
     return "Welcome to the online store server"
 
-########################################################
-###################  API  CATALOG  #####################
-########################################################
-
 @app.route("/api/about", methods=["POST"])
 def about():
   me = {
@@ -28,13 +24,8 @@ def about():
   }
 
   return json.dumps(me)
-# -------------------------------
 
-# @app.route("/api/catalog")
-# def get_catalog():
-#   return json.dumps(mock_catalog)
-
-# -------------------------------
+# ---------------------------------------------
 # DB
 # cursor: special object type comes from DB, kind of a list,
 # with Cursor we can just Read
@@ -52,7 +43,7 @@ def get_catalog():
 
   return json.dumps(all_products)#return the list as an json object
 
-
+# ---------------------------------------------
 @app.route("/api/catalog", methods=["post"])
 def save_product():
   product = request.get_json()
@@ -87,8 +78,7 @@ def save_product():
 
   return json.dumps(product)
 
-# -------------------------------
-
+# ---------------------------------------------
 @app.route("/api/catalog/cheapest")
 def get_cheapest():
 
@@ -102,8 +92,8 @@ def get_cheapest():
 
   cheapest["_id"] = str(cheapest["_id"])
   return json.dumps(cheapest)
-# --------------------------------
 
+# ---------------------------------------------
 @app.route("/api/catalog/total")
 def get_total():
 
@@ -117,7 +107,7 @@ def get_total():
   # total["_id"] = str(cheapest["_id"])
   return json.dumps(total)
 
-# --------------------------------
+# ---------------------------------------------
 @app.route("/api/product/<id>")
 def find_product(id):
 
@@ -130,6 +120,7 @@ def find_product(id):
 
   return json.dumps(prod)
 
+# ---------------------------------------------
 @app.route("/api/products/categories")
 def find_categories():
   list_of_categories = []
@@ -142,6 +133,7 @@ def find_categories():
 
   return json.dumps(list_of_categories)
 
+# ---------------------------------------------
 # get all the products that belong to an specified category
 @app.route("/api/products/category/<cat_name>")#REVIEW
 def get_by_category(cat_name):
@@ -157,6 +149,7 @@ def get_by_category(cat_name):
 
   return json.dumps(list_of_products)
 
+# ---------------------------------------------
 @app.route("/api/products/search/<text>")
 def search_by_text(text):
 
@@ -172,12 +165,7 @@ def search_by_text(text):
 
   return json.dumps(list_of_products)
 
-
-###########################################
-##########   Coupon Codes   ###############
-## _id, code, discount
-###########################################
-
+# ---------------------------------------------
 # @app.route("/api/couponCodes", methods=["post"])
 @app.post("/api/couponCodes")
 def save_coupons():
@@ -191,7 +179,7 @@ def save_coupons():
     return abort(400, "Discount is required")
 
 # validate that discount is not over 31%
-  if type(coupon["discount"]) != type(int) or type(coupon["discount"]) != type(float):
+  if type(coupon["discount"]) != int and type(coupon["discount"]) != float:
     return abort(401, "Discount is required and should be a valid number")
 
   if coupon["discount"] < 0 or coupon["discount"] > 31:
@@ -203,6 +191,7 @@ def save_coupons():
 
   return json.dumps(coupon)
 
+# # ---------------------------------------------
 #2 - get /api/couponCodes
 @app.route("/api/couponCodes")
 def get_coupon_codes():
@@ -215,7 +204,7 @@ def get_coupon_codes():
 
   return json.dumps(all_coupons)
 
-
+# ---------------------------------------------
 #3 - get /api/couponCodes/<code>
 @app.route("/api/couponCodes/<code>")
 def get_codes(code):
